@@ -14,7 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 export class Header implements OnInit {
   private authS = inject(Auth);
   private router = inject(Router);
-  private userDetails = this.authS.userData;
+  userDetails = this.authS.userData;
   private toastr = inject(ToastrService);
   private desroyRef = inject(DestroyRef);
 
