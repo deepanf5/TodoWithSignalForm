@@ -102,20 +102,23 @@ export class UpdatePassword implements OnInit {
     }
     submit(this.passwordForm, async () => {
       const formDate = this.passwordForm().value();
-      this.authS.updatePassword(formDate.password).subscribe({
-        next: (res) => {
-          if (res.data) {
-            this.showSuccess();
-            this.authS.signOut();
-            this.router.navigate(['/sign-in']);
-          } else {
-            this.error(res.error?.message);
-          }
-        },
-        error: (err) => {
-          this.showError();
-        },
-      });
+      this.authS
+        .updatePassword(formDate.password)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            if (res.data) {
+              this.showSuccess();
+              this.authS.signOut();
+              this.router.navigate(['/sign-in']);
+            } else {
+              this.error(res.error?.message);
+            }
+          },
+          error: (err) => {
+            this.showError();
+          },
+        });
     });
   }
 

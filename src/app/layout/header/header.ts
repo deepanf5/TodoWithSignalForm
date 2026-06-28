@@ -1,8 +1,9 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { Auth, loginStatus } from '../../services/auth';
 import { Router } from '@angular/router';
 import { supabase } from '../../app.config';
 import { ToastrService } from 'ngx-toastr';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-header',
@@ -11,27 +12,31 @@ import { ToastrService } from 'ngx-toastr';
   styleUrl: './header.css',
 })
 export class Header implements OnInit {
-  authS = inject(Auth);
-  router = inject(Router);
-  userDetails = this.authS.userData;
+  private authS = inject(Auth);
+  private router = inject(Router);
+  private userDetails = this.authS.userData;
   private toastr = inject(ToastrService);
+  private desroyRef = inject(DestroyRef);
 
   constructor() {}
 
   ngOnInit(): void {}
 
   logOut() {
-    this.authS.signOut().subscribe({
-      next: (res) => {
-        if (!res.error) {
-          this.router.navigate(['/sign-in']);
-          this.showSuccess();
-        }
-      },
-      error: () => {
-        this.showError();
-      },
-    });
+    this.authS
+      .signOut()
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          if (!res.error) {
+            this.router.navigate(['/sign-in']);
+            this.showSuccess();
+          }
+        },
+        error: () => {
+          this.showError();
+        },
+      });
   }
 
   showSuccess() {

@@ -1,10 +1,11 @@
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { Supbase } from '../../services/supbase';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { catchError, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface Todo {
   id: number;
@@ -28,6 +29,7 @@ export class TodoList implements OnInit {
   private router = inject(Router);
   private toastr = inject(ToastrService);
   protected isLoading = signal<boolean>(false);
+  private desroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.getAllTodo();
@@ -38,19 +40,22 @@ export class TodoList implements OnInit {
   }
 
   removeTodo(id: number) {
-    this.subaseS.deleteTodo(id).subscribe({
-      next: (res) => {
-        console.log('res', res);
-        if (res.status === 200 && res.success) {
-          this.showSuccess();
-          this.getAllTodo();
-        }
-      },
-      error: (err) => {
-        console.error(err);
-        this.showError();
-      },
-    });
+    this.subaseS
+      .deleteTodo(id)
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          console.log('res', res);
+          if (res.status === 200 && res.success) {
+            this.showSuccess();
+            this.getAllTodo();
+          }
+        },
+        error: (err) => {
+          console.error(err);
+          this.showError();
+        },
+      });
   }
 
   getAllTodo() {
@@ -58,6 +63,7 @@ export class TodoList implements OnInit {
     this.subaseS
       .getTodoList()
       .pipe(
+        takeUntilDestroyed(this.desroyRef),
         catchError((err: Error) => {
           console.error(err);
           return of([]);

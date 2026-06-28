@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import {
   form,
   FormField,
@@ -13,6 +13,7 @@ import {
 import { Expense } from '../../services/expense';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface expenseI {
   category: string;
@@ -64,6 +65,7 @@ export class AddExpense {
   private expeneseS = inject(Expense);
   private router = inject(Router);
   private toastr = inject(ToastrService);
+  private desroyRef = inject(DestroyRef);
 
   protected expenseForm = form(this.model, (schema) => {
     required(schema.category, {
@@ -96,17 +98,20 @@ export class AddExpense {
 
     submit(this.expenseForm, async () => {
       const formData = this.expenseForm().value();
-      this.expeneseS.addExpense(formData).subscribe({
-        next: (res) => {
-          if (res.status === 201 && res.success === true) {
-            this.showSuccess();
-            this.router.navigate(['home/expense-tracker']);
-          }
-        },
-        error: (err: Error) => {
-          this.showError();
-        },
-      });
+      this.expeneseS
+        .addExpense(formData)
+        .pipe(takeUntilDestroyed(this.desroyRef))
+        .subscribe({
+          next: (res) => {
+            if (res.status === 201 && res.success === true) {
+              this.showSuccess();
+              this.router.navigate(['home/expense-tracker']);
+            }
+          },
+          error: (err: Error) => {
+            this.showError();
+          },
+        });
     });
   }
 

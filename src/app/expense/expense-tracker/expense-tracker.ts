@@ -1,8 +1,9 @@
 import { ScrollingModule } from '@angular/cdk/scrolling';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { Expense } from '../../services/expense';
 import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface ExpenseI {
   id: number;
@@ -26,60 +27,70 @@ export class ExpenseTracker implements OnInit {
   protected thisMonth = signal<number>(0);
   private toastr = inject(ToastrService);
   protected isLoading = signal<boolean>(false);
+  private desroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.getExpenseList();
   }
 
   removeExpense(id: number) {
-    this.expenseS.removeExpenseById(id).subscribe({
-      next: (res) => {
-        if (res.status === 200 && res.success) {
-          this.expenseRemoved();
-          this.getExpenseList();
-        } else {
-          this.showError();
-        }
-      },
-      error: (err: Error) => {
-        console.log(err.message);
-      },
-    });
+    this.expenseS
+      .removeExpenseById(id)
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.status === 200 && res.success) {
+            this.expenseRemoved();
+            this.getExpenseList();
+          } else {
+            this.showError();
+          }
+        },
+        error: (err: Error) => {
+          console.log(err.message);
+        },
+      });
   }
 
   getExpenseList() {
     this.isLoading.set(true);
-    this.expenseS.getExpenseList().subscribe({
-      next: (res) => {
-        this.isLoading.set(false);
-        if (res.status === 200 && res.success === true) {
-          this.expensesList.set([...res.data]);
-          this.total.set(this.expensesList().reduce((acc, item) => item.amount + acc, 0));
-          this.currentMonth();
-        } else {
+    this.expenseS
+      .getExpenseList()
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          this.isLoading.set(false);
+          if (res.status === 200 && res.success === true) {
+            this.expensesList.set([...res.data]);
+            this.total.set(this.expensesList().reduce((acc, item) => item.amount + acc, 0));
+            this.currentMonth();
+          } else {
+            this.showError();
+          }
+        },
+        error: (err: Error) => {
+          console.error(err.message);
           this.showError();
-        }
-      },
-      error: (err: Error) => {
-        console.error(err.message);
-        this.showError();
-        this.isLoading.set(false);
-      },
-    });
+          this.isLoading.set(false);
+        },
+      });
   }
 
   currentMonth() {
-    this.expenseS.getThisMonthExpense().subscribe({
-      next: (res) => {
-        if (res.data) {
-          this.thisMonth.set([...res.data].reduce((acc, item) => item.amount + acc, 0));
-        }
-      },
-      error: (err: Error) => {
-        console.log(err);
-        this.showError();
-      },
-    });
+    this.expenseS
+      .getThisMonthExpense()
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.data) {
+            this.thisMonth.set([...res.data].reduce((acc, item) => item.amount + acc, 0));
+          }
+        },
+        error: (err: Error) => {
+          console.log(err);
+          this.showError();
+        },
+      });
   }
 
   showSuccess() {

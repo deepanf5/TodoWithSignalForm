@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { Supbase } from '../../services/supbase';
 import { Auth } from '../../services/auth';
 import { map } from 'rxjs';
@@ -6,6 +6,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { Router } from '@angular/router';
 import { Todo } from '../todo-list/todo-list';
 import { ToastrService } from 'ngx-toastr';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-pending-list',
@@ -19,25 +20,29 @@ export class PendingList implements OnInit {
   private router = inject(Router);
   private toastr = inject(ToastrService);
   protected isLoading = signal<boolean>(false);
+  private desroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.getPendingTaskList();
   }
 
   removeTodo(id: number) {
-    this.supabaseS.deleteTodo(id).subscribe({
-      next: (res) => {
-        if (res.status === 200 && res.success) {
-          this.showSuccess();
-          this.getPendingTaskList();
-        } else {
+    this.supabaseS
+      .deleteTodo(id)
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.status === 200 && res.success) {
+            this.showSuccess();
+            this.getPendingTaskList();
+          } else {
+            this.showError();
+          }
+        },
+        error: (err: Error) => {
           this.showError();
-        }
-      },
-      error: (err: Error) => {
-        this.showError();
-      },
-    });
+        },
+      });
   }
 
   getPendingTaskList() {
@@ -45,6 +50,7 @@ export class PendingList implements OnInit {
     this.supabaseS
       .getTodoList()
       .pipe(
+        takeUntilDestroyed(this.desroyRef),
         map((res: any) => {
           const records = res?.data || res || [];
           return records.filter((todo: any) => todo.completed === false);

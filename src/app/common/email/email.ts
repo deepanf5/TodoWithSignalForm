@@ -1,8 +1,9 @@
-import { Component, inject, model, signal } from '@angular/core';
+import { Component, DestroyRef, inject, model, signal } from '@angular/core';
 import { email, form, FormField, required, schema, submit } from '@angular/forms/signals';
 import { Auth } from '../../services/auth';
 import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-email',
@@ -19,6 +20,7 @@ export class Email {
   private auth = inject(Auth);
   private toastr = inject(ToastrService);
   private router = inject(Router);
+  private desroyRef = inject(DestroyRef);
 
   protected readonly reseForm = form(this.Emodel, (schema) => {
     required(schema.email, { message: 'Email required. Don’t make us beg' });
@@ -33,20 +35,23 @@ export class Email {
 
     submit(this.reseForm, async () => {
       const formData = this.reseForm().value();
-      this.auth.sentResetLink(formData.email).subscribe({
-        next: (res) => {
-          if (res.data) {
-            this.showReset.set(false);
-            this.router.navigate(['/sign-in']);
-            this.showSuccess();
-          } else {
-            this.showError();
-          }
-        },
-        error: (err: Error) => {
-          this.error(err.message);
-        },
-      });
+      this.auth
+        .sentResetLink(formData.email)
+        .pipe(takeUntilDestroyed(this.desroyRef))
+        .subscribe({
+          next: (res) => {
+            if (res.data) {
+              this.showReset.set(false);
+              this.router.navigate(['/sign-in']);
+              this.showSuccess();
+            } else {
+              this.showError();
+            }
+          },
+          error: (err: Error) => {
+            this.error(err.message);
+          },
+        });
     });
   }
 

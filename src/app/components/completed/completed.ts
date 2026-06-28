@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 
 import { DoLaterI, Supbase } from '../../services/supbase';
 import { Auth } from '../../services/auth';
@@ -6,6 +6,7 @@ import { filter, map } from 'rxjs';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { Todo } from '../todo-list/todo-list';
 import { ToastrService } from 'ngx-toastr';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-completed',
@@ -18,24 +19,28 @@ export class Completed implements OnInit {
   private supabaseS = inject(Supbase);
   private toastr = inject(ToastrService);
   protected isLoading = signal<boolean>(false);
+  private desroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.getCompletedTodo();
   }
 
   removeTodo(id: number) {
-    this.supabaseS.deleteTodo(id).subscribe({
-      next: (res) => {
-        if (res.status === 200 && res.success) {
-          this.showSuccess();
-          this.getCompletedTodo();
-        }
-      },
-      error: (err: Error) => {
-        console.error(err);
-        this.showError();
-      },
-    });
+    this.supabaseS
+      .deleteTodo(id)
+      .pipe(takeUntilDestroyed(this.desroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.status === 200 && res.success) {
+            this.showSuccess();
+            this.getCompletedTodo();
+          }
+        },
+        error: (err: Error) => {
+          console.error(err);
+          this.showError();
+        },
+      });
   }
 
   getCompletedTodo() {
@@ -43,6 +48,7 @@ export class Completed implements OnInit {
     this.supabaseS
       .getTodoList()
       .pipe(
+        takeUntilDestroyed(this.desroyRef),
         map((res: any) => {
           const records = res?.data || res || [];
           return records.filter((todo: any) => todo.completed === true);

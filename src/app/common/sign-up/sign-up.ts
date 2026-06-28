@@ -1,5 +1,6 @@
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth } from './../../services/auth';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import {
   email,
   form,
@@ -37,10 +38,11 @@ export class SignUp {
     password: '',
   });
 
-  authS = inject(Auth);
-  router = inject(Router);
-  toastr = inject(ToastrService);
+  private authS = inject(Auth);
+  private router = inject(Router);
+  private toastr = inject(ToastrService);
   protected isPasswordHidden = signal(true);
+  private desroyRef = inject(DestroyRef);
 
   protected signUpForm = form(this.model, (schema) => {
     required(schema.userName, { message: 'Type a username and join the fun' });
@@ -92,20 +94,23 @@ export class SignUp {
 
     submit(this.signUpForm, async () => {
       const formData = this.signUpForm().value();
-      this.authS.signUp(formData.email, formData.password, formData.userName).subscribe({
-        next: (res: any) => {
-          if (res.data.user) {
-            this.showSuccess();
-            this.router.navigate(['/sign-in']);
-          } else {
+      this.authS
+        .signUp(formData.email, formData.password, formData.userName)
+        .pipe(takeUntilDestroyed(this.desroyRef))
+        .subscribe({
+          next: (res: any) => {
+            if (res.data.user) {
+              this.showSuccess();
+              this.router.navigate(['/sign-in']);
+            } else {
+              this.showError();
+            }
+          },
+          error: (err) => {
+            console.error(err);
             this.showError();
-          }
-        },
-        error: (err) => {
-          console.error(err);
-          this.showError();
-        },
-      });
+          },
+        });
     });
   }
 
