@@ -1,10 +1,11 @@
 import { Auth } from '../../services/auth';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { email, form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { AuthResponse } from '@supabase/supabase-js';
 import { ToastrService } from 'ngx-toastr';
 import { Email } from '../email/email';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 enum User {
   role = 'authenticated',
 }
@@ -20,11 +21,12 @@ export class Login {
     email: '',
     password: '',
   });
-  authS = inject(Auth);
-  router = inject(Router);
-  toastr = inject(ToastrService);
+  private authS = inject(Auth);
+  private router = inject(Router);
+  private toastr = inject(ToastrService);
   protected isPasswordHidden = signal(true);
-  showForgotPassword = signal(false);
+  protected showForgotPassword = signal(false);
+  private desroyRef = inject(DestroyRef);
 
   constructor() {}
 
@@ -54,20 +56,23 @@ export class Login {
 
     submit(this.loginForm, async () => {
       const formData = this.loginForm().value();
-      this.authS.signIn(formData.email, formData.password).subscribe({
-        next: (res: AuthResponse) => {
-          if (res.data.user?.role === User.role) {
-            this.showSuccess();
-            this.router.navigate(['/home']);
-          } else {
-            this.error(res.error?.message ?? 'An unknown error occurred');
-          }
-        },
-        error: (err) => {
-          console.error(err);
-          this.showError();
-        },
-      });
+      this.authS
+        .signIn(formData.email, formData.password)
+        .pipe(takeUntilDestroyed(this.desroyRef))
+        .subscribe({
+          next: (res: AuthResponse) => {
+            if (res.data.user?.role === User.role) {
+              this.showSuccess();
+              this.router.navigate(['/home']);
+            } else {
+              this.error(res.error?.message ?? 'An unknown error occurred');
+            }
+          },
+          error: (err) => {
+            console.error(err);
+            this.showError();
+          },
+        });
     });
   }
 
