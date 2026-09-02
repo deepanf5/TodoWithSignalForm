@@ -2,7 +2,8 @@ import { inject, Injectable, Injector } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { supabase } from '../app.config';
 import { Auth } from './auth';
-import { filter, from, Observable, of, switchMap } from 'rxjs';
+import { defer, filter, finalize, from, Observable, of, switchMap } from 'rxjs';
+import { Loader } from './loader';
 
 export interface DoLaterI {
   title: string;
@@ -18,6 +19,26 @@ export interface DoLaterI {
 export class Supbase {
   authS = inject(Auth);
   private injector = inject(Injector);
+  private loaderS = inject(Loader);
+
+  // getTodoList(): Observable<any> {
+  //   return toObservable(this.authS.userId, { injector: this.injector }).pipe(
+  //     filter((userId) => !!userId),
+  //     switchMap(() => {
+  //       if (!this.authS.userId()) {
+  //         return of([]);
+  //       }
+
+  //       return from(
+  //         supabase
+  //           .from('idolater')
+  //           .select('*')
+  //           .eq('user_id', this.authS.userId())
+  //           .order('created_at', { ascending: false }),
+  //       );
+  //     }),
+  //   );
+  // }
 
   getTodoList(): Observable<any> {
     return toObservable(this.authS.userId, { injector: this.injector }).pipe(
@@ -27,12 +48,18 @@ export class Supbase {
           return of([]);
         }
 
-        return from(
-          supabase
-            .from('idolater')
-            .select('*')
-            .eq('user_id', this.authS.userId())
-            .order('created_at', { ascending: false })
+        // defer ensures loader.show() is called right when the subscription starts
+        return defer(() => {
+          this.loaderS.show();
+          return from(
+            supabase
+              .from('idolater')
+              .select('*')
+              .eq('user_id', this.authS.userId())
+              .order('created_at', { ascending: false }),
+          );
+        }).pipe(
+          finalize(() => this.loaderS.hide()), // Runs on success or error
         );
       }),
     );

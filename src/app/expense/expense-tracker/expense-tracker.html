@@ -1,8 +1,4 @@
-@if (isLoading()) {
-  <div class="loadingImagecontainer">
-    <img class="loadingImage" src="/loading.png" alt="loading image" />
-  </div>
-} @else if (expensesList().length > 0) {
+@if (expensesList().length >= 1) {
   <section>
     <header class="header"><button class="button headerbtn">Expense tracker</button></header>
 
@@ -28,6 +24,15 @@
                 <button class="button remove" (click)="removeExpense(expense.id)">Remove</button>
               </td>
             </tr>
+          } @empty {
+            <section class="noExpenseContainer">
+              <div class="card noDataCard-one">
+                <img class="noDataImage" src="/noData.svg" alt="A picture of the Boat" />
+              </div>
+              <div class="card noDataCard-two">
+                <h2 class="displayText">No data available</h2>
+              </div>
+            </section>
           }
         </tbody>
       </table>
@@ -37,15 +42,6 @@
       <td class="footer-heading">{{ thisMonth() | currency: 'INR' }}</td>
       <td class="footer-heading">Total</td>
       <td class="footer-heading">{{ total() | currency: 'INR' }}</td>
-    </div>
-  </section>
-} @else {
-  <section class="noExpenseContainer">
-    <div class="card noDataCard-one">
-      <img class="noDataImage" src="/noData.svg" alt="A picture of the Boat" />
-    </div>
-    <div class="card noDataCard-two">
-      <h2 class="displayText">No data available</h2>
     </div>
   </section>
 }

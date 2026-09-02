@@ -26,7 +26,7 @@ export class ExpenseTracker implements OnInit {
   protected total = signal<number>(0);
   protected thisMonth = signal<number>(0);
   private toastr = inject(ToastrService);
-  protected isLoading = signal<boolean>(false);
+
   private desroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
@@ -53,13 +53,11 @@ export class ExpenseTracker implements OnInit {
   }
 
   getExpenseList() {
-    this.isLoading.set(true);
     this.expenseS
       .getExpenseList()
       .pipe(takeUntilDestroyed(this.desroyRef))
       .subscribe({
         next: (res) => {
-          this.isLoading.set(false);
           if (res.status === 200 && res.success === true) {
             this.expensesList.set([...res.data]);
             this.total.set(this.expensesList().reduce((acc, item) => item.amount + acc, 0));
@@ -71,7 +69,6 @@ export class ExpenseTracker implements OnInit {
         error: (err: Error) => {
           console.error(err.message);
           this.showError();
-          this.isLoading.set(false);
         },
       });
   }

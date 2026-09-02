@@ -12,6 +12,12 @@
     <div class="column column-80 router-container">
       <main>
         <router-outlet></router-outlet>
+
+        <!-- @if (loaderServices.loading$ | async) {
+          <div class="loadingImagecontainer">
+            <img class="loadingImage" src="/loading.png" alt="loading image" />
+          </div>
+        } -->
       </main>
     </div>
   </div>

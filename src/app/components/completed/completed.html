@@ -1,62 +1,56 @@
-@if (isLoading()) {
-  <div class="loadingImagecontainer">
-    <img class="loadingImage" src="/loading.png" alt="loading image" />
-  </div>
-} @else if (todoList().length > 0) {
-  <section>
-    <header class="header">
-      <button class="button headerbtn">Completed List : {{ todoList().length }}</button>
-    </header>
+<section>
+  <header class="header">
+    <button class="button headerbtn">Completed List : {{ todoList().length }}</button>
+  </header>
 
-    @if (todoList().length >= 1) {
-      <cdk-virtual-scroll-viewport itemSize="50" class="virtual-scrolling">
-        @for (todo of todoList(); track todo) {
-          <div class="card-container">
-            <div class="container card-one">
-              <header class="card-header">
-                <h2 class="card-title">{{ todo.title }}</h2>
-                @if (todo.task_type === 'High') {
-                  <p class="high task">{{ todo.task_type }}</p>
-                } @else if (todo.task_type === 'Medium') {
-                  <p class="medium task">{{ todo.task_type }}</p>
-                } @else {
-                  <p class="low task">{{ todo.task_type }}</p>
-                }
-              </header>
-              <p class="description">{{ todo.description }}</p>
-              <div class="btn-container">
-                <button class="button-small" (click)="removeTodo(todo.id)">Remove</button>
-              </div>
-            </div>
-            <div class="card-two">
-              @if (todo.completed) {
-                <div>
-                  <p>Completed</p>
-                  <img
-                    class="icon"
-                    src="/green-checkmark-icon.svg"
-                    alt="A picture of green check mark"
-                  />
-                </div>
+  @if (todoList().length >= 1) {
+    <cdk-virtual-scroll-viewport itemSize="50" class="virtual-scrolling">
+      @for (todo of todoList(); track todo) {
+        <div class="card-container">
+          <div class="container card-one">
+            <header class="card-header">
+              <h2 class="card-title">{{ todo.title }}</h2>
+              @if (todo.task_type === 'High') {
+                <p class="high task">{{ todo.task_type }}</p>
+              } @else if (todo.task_type === 'Medium') {
+                <p class="medium task">{{ todo.task_type }}</p>
               } @else {
-                <div>
-                  <p>Pending</p>
-                  <img class="icon2" src="/caution-svgrepo-com.svg" alt="A picture of clock" />
-                </div>
+                <p class="low task">{{ todo.task_type }}</p>
               }
+            </header>
+            <p class="description">{{ todo.description }}</p>
+            <div class="btn-container">
+              <button class="button-small" (click)="removeTodo(todo.id)">Remove</button>
             </div>
           </div>
-        }
-      </cdk-virtual-scroll-viewport>
-    }
-  </section>
-} @else {
-  <section class="noDataTaskContainer">
-    <div class="card noDataCard-one">
-      <img class="noDataImage" src="/noData.svg" alt="A picture of Boat" />
-    </div>
-    <div class="card noDataCard-two">
-      <h2 class="displayText">No data available</h2>
-    </div>
-  </section>
-}
+          <div class="card-two">
+            @if (todo.completed) {
+              <div>
+                <p>Completed</p>
+                <img
+                  class="icon"
+                  src="/green-checkmark-icon.svg"
+                  alt="A picture of green check mark"
+                />
+              </div>
+            } @else {
+              <div>
+                <p>Pending</p>
+                <img class="icon2" src="/caution-svgrepo-com.svg" alt="A picture of clock" />
+              </div>
+            }
+          </div>
+        </div>
+      } @empty {
+        <section class="noDataTaskContainer">
+          <div class="card noDataCard-one">
+            <img class="noDataImage" src="/noData.svg" alt="A picture of Boat" />
+          </div>
+          <div class="card noDataCard-two">
+            <h2 class="displayText">No data available</h2>
+          </div>
+        </section>
+      }
+    </cdk-virtual-scroll-viewport>
+  }
+</section>

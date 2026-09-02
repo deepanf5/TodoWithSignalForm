@@ -1,1 +1,6 @@
 <router-outlet></router-outlet>
+@if (loaderServices.loading$ | async) {
+  <div class="loadingImagecontainer">
+    <img class="loadingImage" src="/loading.png" alt="loading image" />
+  </div>
+}

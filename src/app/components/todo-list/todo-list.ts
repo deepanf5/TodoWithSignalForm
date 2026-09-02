@@ -65,7 +65,7 @@ export class TodoList implements OnInit {
       .pipe(
         takeUntilDestroyed(this.desroyRef),
         catchError((err: Error) => {
-          console.error(err);
+          console.error(err.message);
           return of([]);
         }),
       )
